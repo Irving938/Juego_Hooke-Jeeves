@@ -10,6 +10,7 @@ Ventana principal desarrollada con Pygame.
 Interfaz completamente dibujada con figuras geométricas (sin uso de imágenes o assets).
 Representación de una forja y una espada.
 Implementación inicial del algoritmo Hooke-Jeeves.
+
 Exploración de dos variables:
 Temperatura de la forja.
 Tiempo de enfriamiento.
