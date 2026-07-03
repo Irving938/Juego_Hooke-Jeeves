@@ -20,4 +20,3 @@ Sistema de calidad de la espada basado en una función objetivo.
 Recurso limitado de lingotes.
 Condición de victoria basada en el criterio matemático del algoritmo.
 
-Max es un pendejo
