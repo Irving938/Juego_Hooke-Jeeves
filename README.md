@@ -21,6 +21,7 @@ Recurso limitado de lingotes.
 Condición de victoria basada en el criterio matemático del algoritmo.
 
 Mecánica:
+
 · Empiezas con temperatura=6, enfriamiento=-4 y un paso (Δ) de 2.
 
 · Los botones Temp ± y Enfriar ± exploran sumando/restando Δ a la mejor solución actual. Si mejora, se actualiza la solución y se activa el pattern move.
