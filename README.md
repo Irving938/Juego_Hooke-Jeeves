@@ -22,7 +22,12 @@ Condición de victoria basada en el criterio matemático del algoritmo.
 
 Mecánica:
 · Empiezas con temperatura=6, enfriamiento=-4 y un paso (Δ) de 2.
+
 · Los botones Temp ± y Enfriar ± exploran sumando/restando Δ a la mejor solución actual. Si mejora, se actualiza la solución y se activa el pattern move.
+
 · Repetir técnica ejecuta un movimiento de patrón: salta en la misma dirección del último éxito, acelerando la búsqueda.
+
 · Cuando ningún vecino mejora, pulsas Reducir Δ para dividir el paso a la mitad y seguir afinando.
+
 · El proceso termina cuando Δ es menor que ε = 0.10 (espada legendaria) o se agotan los 20 lingotes.
+
