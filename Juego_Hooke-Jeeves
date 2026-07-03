@@ -1,0 +1,327 @@
+import pygame
+import math
+import sys
+
+# =====================================================
+# CONFIGURACIÓN
+# =====================================================
+
+pygame.init()
+
+WIDTH = 1000
+HEIGHT = 700
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("The Perfect Blade")
+
+clock = pygame.time.Clock()
+
+FONT = pygame.font.SysFont("arial", 22)
+BIG_FONT = pygame.font.SysFont("arial", 34, bold=True)
+
+# Colores
+
+WHITE = (245,245,245)
+BLACK = (20,20,20)
+GRAY = (80,80,80)
+LIGHT_GRAY = (180,180,180)
+
+RED = (210,70,70)
+GREEN = (60,180,90)
+BLUE = (60,120,220)
+ORANGE = (255,140,0)
+YELLOW = (255,220,50)
+
+BACKGROUND = (40,40,45)
+
+# =====================================================
+# FUNCIÓN OBJETIVO (Sphere)
+# =====================================================
+
+def objective(temp, cool):
+    """
+    Función Sphere.
+
+    El mínimo está en (0,0)
+
+    Mientras menor sea el resultado,
+    mejor será la espada.
+    """
+
+    return temp**2 + cool**2
+
+
+def sword_quality(value):
+    """
+    Convierte el valor matemático
+    en calidad de espada.
+    """
+
+    q = max(0, 100 - value)
+
+    return round(q,2)
+
+# =====================================================
+# ESTADO HOOKE-JEEVES
+# =====================================================
+
+x = 6.0
+y = -4.0
+
+delta = 2.0
+
+epsilon = 0.10
+
+best_x = x
+best_y = y
+
+best_value = objective(best_x,best_y)
+
+last_direction = None
+
+message = "Comienza la forja"
+
+pattern_available = False
+
+lingotes = 20
+
+# =====================================================
+# BOTONES
+# =====================================================
+
+buttons = {
+
+    "temp_plus":pygame.Rect(650,180,150,45),
+
+    "temp_minus":pygame.Rect(820,180,150,45),
+
+    "cool_plus":pygame.Rect(650,250,150,45),
+
+    "cool_minus":pygame.Rect(820,250,150,45),
+
+    "pattern":pygame.Rect(650,340,320,60),
+
+    "reduce":pygame.Rect(650,430,320,60)
+
+}
+
+# =====================================================
+# FUNCIONES DEL ALGORITMO
+# =====================================================
+
+def explore(dx,dy):
+    
+    global last_direction
+    global best_x
+    global best_y
+    global best_value
+
+    global message
+    global pattern_available
+
+    global lingotes
+
+    if lingotes <= 0:
+        message = "No quedan lingotes."
+        return
+
+    lingotes -= 1
+
+    nx = best_x + dx
+    ny = best_y + dy
+
+    value = objective(nx,ny)
+
+    if value < best_value:
+
+        best_x = nx
+        best_y = ny
+        best_value = value
+
+        pattern_available = True
+
+        message = "¡La espada mejoró!"
+        last_direction = (dx, dy)
+
+    else:
+
+        pattern_available = False
+
+        message = "No hubo mejora."
+
+
+def pattern_move():
+
+    global best_x
+    global best_y
+    global best_value
+
+    global message
+    global pattern_available
+
+    if not pattern_available:
+        message = "Primero encuentra una mejora."
+        return
+
+    # Dirección desde el punto anterior
+
+    global last_direction
+
+    dx, dy = last_direction
+
+    nx = best_x + dx
+    ny = best_y + dy
+
+    value = objective(nx,ny)
+
+    if value < best_value:
+
+        best_x = nx
+        best_y = ny
+        best_value = value
+
+        message = "Pattern Move exitoso."
+
+    else:
+
+        message = "Pattern Move sin mejora."
+
+    pattern_available = False
+
+
+def reduce_delta():
+
+    global delta
+    global message
+
+    delta /= 2
+
+    message = f"Δ reducido a {delta:.2f}"
+
+# =====================================================
+# DIBUJAR TEXTO
+# =====================================================
+
+def draw_text(text,font,color,x,y):
+
+    img = font.render(text,True,color)
+
+    screen.blit(img,(x,y))
+
+    # =====================================================
+# DIBUJAR INTERFAZ
+# =====================================================
+
+def draw_button(rect, text, color):
+    pygame.draw.rect(screen, color, rect, border_radius=8)
+    pygame.draw.rect(screen, WHITE, rect, 2, border_radius=8)
+
+    txt = FONT.render(text, True, WHITE)
+    txt_rect = txt.get_rect(center=rect.center)
+
+    screen.blit(txt, txt_rect)
+
+
+def draw_scene():
+
+    screen.fill(BACKGROUND)
+
+    # Título
+    draw_text("THE PERFECT BLADE", BIG_FONT, YELLOW, 320, 20)
+
+    # ---------- Horno ----------
+    pygame.draw.rect(screen, GRAY, (60,120,220,220))
+    pygame.draw.rect(screen, BLACK, (100,160,140,120))
+
+    pygame.draw.circle(screen, ORANGE, (170,220),50)
+    pygame.draw.circle(screen, YELLOW, (170,220),25)
+
+    # ---------- Espada ----------
+    pygame.draw.rect(screen, LIGHT_GRAY, (120,430,200,12))
+    pygame.draw.rect(screen, YELLOW, (180,425,20,25))
+    pygame.draw.rect(screen, GRAY, (185,450,10,60))
+
+    # ---------- Información ----------
+
+    draw_text(f"Temperatura : {best_x:.2f}", FONT, WHITE, 380,110)
+    draw_text(f"Enfriamiento: {best_y:.2f}", FONT, WHITE, 380,145)
+
+    draw_text(f"Calidad: {sword_quality(best_value)}", FONT, GREEN, 380,190)
+
+    draw_text(f"Δ = {delta:.2f}", FONT, WHITE, 380,230)
+
+    draw_text(f"Lingotes: {lingotes}", FONT, WHITE, 380,270)
+
+    draw_text(message, FONT, ORANGE, 380,320)
+
+    # ---------- Botones ----------
+
+    draw_button(buttons["temp_plus"], "Temp +", BLUE)
+    draw_button(buttons["temp_minus"], "Temp -", BLUE)
+
+    draw_button(buttons["cool_plus"], "Enfriar +", BLUE)
+    draw_button(buttons["cool_minus"], "Enfriar -", BLUE)
+
+    draw_button(buttons["pattern"], "Repetir tecnica", GREEN)
+
+    draw_button(buttons["reduce"], "Reducir Δ", RED)
+
+    # ---------- Victoria ----------
+
+    if delta < epsilon:
+
+        pygame.draw.rect(screen,(30,30,30),(180,540,640,90))
+
+        pygame.draw.rect(screen,GREEN,(180,540,640,90),3)
+
+        draw_text("¡¡ESPADA LEGENDARIA FORJADA!!",
+                  BIG_FONT,
+                  GREEN,
+                  220,
+                  565)
+
+
+# =====================================================
+# LOOP PRINCIPAL
+# =====================================================
+
+running = True
+
+while running:
+
+    clock.tick(60)
+
+    for event in pygame.event.get():
+
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+
+            mouse = pygame.mouse.get_pos()
+
+            if buttons["temp_plus"].collidepoint(mouse):
+                explore(delta,0)
+
+            elif buttons["temp_minus"].collidepoint(mouse):
+                explore(-delta,0)
+
+            elif buttons["cool_plus"].collidepoint(mouse):
+                explore(0,delta)
+
+            elif buttons["cool_minus"].collidepoint(mouse):
+                explore(0,-delta)
+
+            elif buttons["pattern"].collidepoint(mouse):
+                pattern_move()
+
+            elif buttons["reduce"].collidepoint(mouse):
+                reduce_delta()
+
+    draw_scene()
+
+    pygame.display.flip()
+
+pygame.quit()
+sys.exit()
+# IRONEDIT:1783053335:05ae9b6c8f4f360ddd6fb9dc582642c71065055934fa6ceb86ff405325e1c2da
