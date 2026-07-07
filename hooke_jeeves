@@ -1,0 +1,148 @@
+"""
+Módulo de optimización Hooke-Jeeves.
+Implementa el algoritmo paso a paso y las funciones de prueba.
+"""
+import math
+
+# ----------------------------------------------------------------------
+# Funciones de prueba 
+# ----------------------------------------------------------------------
+def sphere(x, y):
+    """Función Sphere: mínimo en (0,0)."""
+    return x**2 + y**2
+
+def himmelblau(x, y):
+    """Función Himmelblau: cuatro mínimos globales."""
+    return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
+
+def rastrigin(x, y, A=10):
+    """Función Rastrigin: muchos mínimos locales."""
+    return 2*A + (x**2 - A * math.cos(2*math.pi*x)) + (y**2 - A * math.cos(2*math.pi*y))
+
+def rosenbrock(x, y):
+    """Función Rosenbrock (2D): valle curvo, mínimo en (1,1)."""
+    return 100*(y - x**2)**2 + (1 - x)**2
+
+# Diccionario para seleccionar la función activa
+FUNCTIONS = {
+    "sphere":     sphere,
+    "himmelblau": himmelblau,
+    "rastrigin":  rastrigin,
+    "rosenbrock": rosenbrock,
+}
+
+# ----------------------------------------------------------------------
+# Clase del optimizador Hooke-Jeeves
+# ----------------------------------------------------------------------
+class HookeJeeves:
+    """
+    Implementación interactiva del algoritmo de Hooke-Jeeves.
+    El usuario controla manualmente los pasos: exploración, patrón, reducción.
+    """
+    def __init__(self, x0=6.0, y0=-4.0, delta=2.0, epsilon=0.10, func_name="sphere"):
+        # Punto inicial
+        self.x0, self.y0 = x0, y0
+        self.bx, self.by = x0, y0
+
+        # Parámetros del algoritmo
+        self.delta = delta
+        self.epsilon = epsilon
+
+        # Seleccionar función objetivo
+        if func_name not in FUNCTIONS:
+            raise ValueError(f"Función '{func_name}' no soportada. Usa: {list(FUNCTIONS.keys())}")
+        self.func_name = func_name
+        self.func = FUNCTIONS[func_name]          # <--- ¡Esta línea es la que faltaba!
+
+        # Evaluar el punto inicial
+        self.best_value = self.evaluate(self.bx, self.by)
+
+        # Estado de la exploración
+        self.explored = {"temp+": False, "temp-": False, "cool+": False, "cool-": False}
+        self.exploration_success = False
+        self.last_direction = None
+        self.message = "Explora las cuatro direcciones."
+
+    def evaluate(self, x, y):
+        """Evalúa la función objetivo en (x, y)."""
+        return self.func(x, y)
+
+    def quality(self, value):
+        """Convierte el valor de f(x) en una 'calidad' (100 - valor)."""
+        return max(0, 100 - value)
+
+    def reset_exploration(self):
+        """Reinicia el estado de exploración para una nueva ronda."""
+        self.explored = {"temp+": False, "temp-": False, "cool+": False, "cool-": False}
+        self.exploration_success = False
+        self.last_direction = None
+        self.message = "Explora las cuatro direcciones."
+
+    def explore_direction(self, dx, dy):
+        """
+        Evalúa un movimiento en la dirección (dx, dy) desde el mejor punto actual.
+        Marca la dirección como explorada.
+        Retorna True si mejoró, False en caso contrario.
+        """
+        # Determinar qué dirección es
+        if dx > 0: key = "temp+"
+        elif dx < 0: key = "temp-"
+        elif dy > 0: key = "cool+"
+        else: key = "cool-"
+
+        if self.explored[key]:
+            self.message = f"Dirección {key} ya explorada."
+            return False
+
+        nx, ny = self.bx + dx, self.by + dy
+        val = self.evaluate(nx, ny)
+        self.explored[key] = True
+
+        if val < self.best_value:
+            self.bx, self.by = nx, ny
+            self.best_value = val
+            self.exploration_success = True
+            self.last_direction = (dx, dy)
+            self.message = f"¡Mejoró! Nueva f={val:.4f}"
+            return True
+        else:
+            self.message = f"No mejoró. f={val:.4f}"
+            return False
+
+    def all_explored(self):
+        """Verifica si las cuatro direcciones han sido exploradas."""
+        return all(self.explored.values())
+
+    def pattern_move(self):
+        """
+        Realiza un salto de patrón si la exploración fue exitosa.
+        Retorna True si el patrón mejoró, False en caso contrario.
+        """
+        if not self.exploration_success or self.last_direction is None:
+            self.message = "Exploración sin éxito: no se puede hacer patrón."
+            return False
+
+        dx, dy = self.last_direction
+        nx, ny = self.bx + dx, self.by + dy
+        val = self.evaluate(nx, ny)
+
+        if val < self.best_value:
+            self.bx, self.by = nx, ny
+            self.best_value = val
+            self.exploration_success = True   # se mantiene para repetir
+            self.message = f"¡Patrón exitoso! Nueva f={val:.4f}"
+            return True
+        else:
+            self.exploration_success = False
+            self.message = "Patrón sin mejora."
+            return False
+
+    def reduce_delta(self):
+        """Reduce Δ a la mitad y reinicia la exploración."""
+        self.delta /= 2.0
+        self.reset_exploration()
+        self.message = f"Δ reducido a {self.delta:.4f}"
+        if self.delta < self.epsilon:
+            self.message += " ¡Algoritmo terminado (Δ < ε)!"
+            return True   # señal de paro
+        return False
