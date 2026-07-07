@@ -32,7 +32,7 @@ Mecánica:
 
 · El proceso termina cuando Δ es menor que ε = 0.10 (espada legendaria) o se agotan los 20 lingotes.
 
-# Version 0.2.2
+# Version 0.2.4
 
 CAMBIOS PRINCIPALES
 1. Arquitectura y Organización
