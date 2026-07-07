@@ -1,327 +1,420 @@
-import pygame
-import math
-import sys
+import pygame, math, sys, random
 
-# =====================================================
-# CONFIGURACIÓN
-# =====================================================
-
+# Configuración
 pygame.init()
-
-WIDTH = 1000
-HEIGHT = 700
-
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("The Perfect Blade")
-
+W, H = 1000, 700
+screen = pygame.display.set_mode((W, H))
+pygame.display.set_caption("The Perfect Blade - Master Forge")
 clock = pygame.time.Clock()
-
 FONT = pygame.font.SysFont("arial", 22)
 BIG_FONT = pygame.font.SysFont("arial", 34, bold=True)
+TITLE_FONT = pygame.font.SysFont("arial", 50, bold=True)
 
 # Colores
-
-WHITE = (245,245,245)
-BLACK = (20,20,20)
-GRAY = (80,80,80)
-LIGHT_GRAY = (180,180,180)
-
-RED = (210,70,70)
-GREEN = (60,180,90)
-BLUE = (60,120,220)
-ORANGE = (255,140,0)
-YELLOW = (255,220,50)
-
-BACKGROUND = (40,40,45)
-
-# =====================================================
-# FUNCIÓN OBJETIVO (Sphere)
-# =====================================================
-
-def objective(temp, cool):
-    """
-    Función Sphere.
-
-    El mínimo está en (0,0)
-
-    Mientras menor sea el resultado,
-    mejor será la espada.
-    """
-
-    return temp**2 + cool**2
-
-
-def sword_quality(value):
-    """
-    Convierte el valor matemático
-    en calidad de espada.
-    """
-
-    q = max(0, 100 - value)
-
-    return round(q,2)
-
-# =====================================================
-# ESTADO HOOKE-JEEVES
-# =====================================================
-
-x = 6.0
-y = -4.0
-
-delta = 2.0
-
-epsilon = 0.10
-
-best_x = x
-best_y = y
-
-best_value = objective(best_x,best_y)
-
-last_direction = None
-
-message = "Comienza la forja"
-
-pattern_available = False
-
-lingotes = 20
-
-# =====================================================
-# BOTONES
-# =====================================================
-
-buttons = {
-
-    "temp_plus":pygame.Rect(650,180,150,45),
-
-    "temp_minus":pygame.Rect(820,180,150,45),
-
-    "cool_plus":pygame.Rect(650,250,150,45),
-
-    "cool_minus":pygame.Rect(820,250,150,45),
-
-    "pattern":pygame.Rect(650,340,320,60),
-
-    "reduce":pygame.Rect(650,430,320,60)
-
-}
-
-# =====================================================
-# FUNCIONES DEL ALGORITMO
-# =====================================================
-
-def explore(dx,dy):
-    
-    global last_direction
-    global best_x
-    global best_y
-    global best_value
-
-    global message
-    global pattern_available
-
-    global lingotes
-
-    if lingotes <= 0:
-        message = "No quedan lingotes."
-        return
-
-    lingotes -= 1
-
-    nx = best_x + dx
-    ny = best_y + dy
-
-    value = objective(nx,ny)
-
-    if value < best_value:
-
-        best_x = nx
-        best_y = ny
-        best_value = value
-
-        pattern_available = True
-
-        message = "¡La espada mejoró!"
-        last_direction = (dx, dy)
-
-    else:
-
-        pattern_available = False
-
-        message = "No hubo mejora."
-
-
-def pattern_move():
-
-    global best_x
-    global best_y
-    global best_value
-
-    global message
-    global pattern_available
-
-    if not pattern_available:
-        message = "Primero encuentra una mejora."
-        return
-
-    # Dirección desde el punto anterior
-
-    global last_direction
-
-    dx, dy = last_direction
-
-    nx = best_x + dx
-    ny = best_y + dy
-
-    value = objective(nx,ny)
-
-    if value < best_value:
-
-        best_x = nx
-        best_y = ny
-        best_value = value
-
-        message = "Pattern Move exitoso."
-
-    else:
-
-        message = "Pattern Move sin mejora."
-
-    pattern_available = False
-
-
-def reduce_delta():
-
-    global delta
-    global message
-
-    delta /= 2
-
-    message = f"Δ reducido a {delta:.2f}"
-
-# =====================================================
-# DIBUJAR TEXTO
-# =====================================================
-
-def draw_text(text,font,color,x,y):
-
-    img = font.render(text,True,color)
-
-    screen.blit(img,(x,y))
-
-    # =====================================================
-# DIBUJAR INTERFAZ
-# =====================================================
-
-def draw_button(rect, text, color):
+C = {'WHITE': (245,245,245), 'BLACK': (20,20,20), 'GRAY': (80,80,80), 'LIGHT_GRAY': (180,180,180),
+     'RED': (210,70,70), 'GREEN': (60,180,90), 'BLUE': (60,120,220), 'ORANGE': (255,140,0),
+     'YELLOW': (255,220,50), 'BROWN': (139,69,19), 'DARK_BROWN': (101,67,33), 'BACKGROUND': (40,40,45),
+     'GOLD': (212,175,55), 'ANVIL_GRAY': (100,100,100), 'LAVA_RED': (255,60,0), 'WATER_BLUE': (30,144,255),
+     'STONE': (125,125,125), 'DARK_STONE': (80,80,80), 'MORTAR': (60,60,60)}
+
+# Estado del juego
+class Game:
+    def __init__(self):
+        self.gold = 200
+        self.lingotes = 20
+        self.d_up = 0
+        self.eps = 0.10
+        self.cust_idx = 0
+        self.customers = [{'req': 60+i*8+random.randint(-3,3), 'pay': 100+i*40+random.randint(-10,10),
+                           'tt': random.uniform(-6,6), 'tc': random.uniform(-6,6)} for i in range(5)]
+        self.forge_res = None
+        self.fmsg = ""
+        self.fqual = 0
+        self.req = 0
+        self.reward = 0
+        self.hammer_anim = self.lava_anim = self.water_anim = 0
+        self.max_h = 20; self.max_b = 30
+        self.shake = 0
+        self.streak = 0
+        self.reset()
+
+    def reset(self):
+        self.x, self.y = 6.0, -4.0
+        self.bx, self.by = self.x, self.y
+        self.bv = self.obj(self.bx, self.by)
+        self.delta = 2.0 + self.d_up * 0.5
+        self.last_dir = None
+        self.pat_ok = False
+        self.streak = 0
+        self.msg = "¡Comienza la forja!"
+        self.et = random.randint(3,6)
+        self.moves = 0
+
+    def obj(self, t, c):
+        cust = self.customers[self.cust_idx] if self.cust_idx < len(self.customers) else {'tt':0,'tc':0}
+        return (t - cust['tt'])**2 + (c - cust['tc'])**2
+
+    def qual(self, v): return max(0, 100 - v)
+
+    def use_ling(self):
+        if self.lingotes > 0:
+            self.lingotes -= 1
+            return True
+        return False
+
+    def trig(self, anim):
+        if anim == 'h': self.hammer_anim = self.max_h
+        elif anim == 'l': self.lava_anim = self.max_b
+        elif anim == 'w': self.water_anim = self.max_b
+
+    def explore(self, dx, dy):
+        if not self.use_ling():
+            self.msg = "¡Sin lingotes!"
+            return
+        if dx: self.trig('h')
+        elif dy > 0: self.trig('w')
+        else: self.trig('l')
+        nx, ny = self.bx + dx, self.by + dy
+        v = self.obj(nx, ny)
+        if v < self.bv:
+            self.bx, self.by, self.bv = nx, ny, v
+            self.pat_ok, self.last_dir = True, (dx, dy)
+            self.streak, self.msg = 0, "¡La espada mejoró!"
+            self.shake = 5
+        else:
+            self.pat_ok = False
+            self.msg = "No hubo mejora."
+        self.moves += 1
+        self.random_event()
+
+    def pattern(self):
+        if not self.pat_ok:
+            self.msg = "Primero encuentra una mejora."
+            return
+        if not self.use_ling():
+            self.msg = "¡Sin lingotes!"
+            self.pat_ok = False
+            return
+        self.trig('h')
+        dx, dy = self.last_dir
+        nx, ny = self.bx + dx, self.by + dy
+        v = self.obj(nx, ny)
+        if v < self.bv:
+            self.bx, self.by, self.bv = nx, ny, v
+            self.pat_ok = True
+            self.streak += 1
+            self.msg = f"¡Pattern Move exitoso! (x{self.streak})"
+            self.shake = 5
+        else:
+            self.msg = "Pattern Move sin mejora."
+            self.pat_ok = False
+            self.streak = 0
+        self.moves += 1
+        self.random_event()
+
+    def reduce_delta(self):
+        self.delta /= 2
+        self.msg = f"Δ reducido a {self.delta:.2f}"
+        if self.delta < self.eps:
+            self.msg += " ¡Forja terminada (Δ<ε)!"
+            self.finish()
+
+    def random_event(self):
+        if self.moves >= self.et:
+            self.moves = 0
+            self.et = random.randint(3,6)
+            r = random.random()
+            if r < 0.3:
+                p = random.uniform(1,3)
+                self.bv += p
+                self.msg = f"¡El fuego bajó! +{p:.1f}"
+            elif r < 0.6:
+                b = random.uniform(0.5,2)
+                self.bv = max(0, self.bv - b)
+                self.msg = f"¡Chispa! -{b:.1f}"
+            else:
+                self.bx += random.uniform(-0.5,0.5)
+                self.by += random.uniform(-0.5,0.5)
+                self.bv = self.obj(self.bx, self.by)
+                self.msg = "¡La pieza se movió!"
+
+    def finish(self):
+        q = self.qual(self.bv)
+        self.fqual = q
+        if q >= self.req:
+            self.forge_res = "exito"
+            self.gold += self.reward
+            self.fmsg = f"¡Vendida por {self.reward} monedas!"
+        else:
+            self.forge_res = "fracaso"
+            self.fmsg = f"Calidad insuficiente. Necesitaba {self.req}."
+        self.cust_idx += 1
+
+    def next_cust(self):
+        if self.cust_idx < len(self.customers):
+            c = self.customers[self.cust_idx]
+            self.req, self.reward, self.forge_res = c['req'], c['pay'], "forjando"
+            self.reset()
+        else:
+            self.forge_res = "victoria_total"
+
+    def update_anim(self):
+        if self.hammer_anim > 0: self.hammer_anim -= 1
+        if self.lava_anim > 0: self.lava_anim -= 1
+        if self.water_anim > 0: self.water_anim -= 1
+        if self.shake > 0: self.shake -= 1
+
+# --- Funciones de dibujo ---
+def text(txt, font, color, x, y, center=False):
+    img = font.render(txt, True, color)
+    r = img.get_rect(center=(x, y)) if center else img.get_rect(topleft=(x, y))
+    screen.blit(img, r)
+
+def button(rect, txt, color, font=FONT):
     pygame.draw.rect(screen, color, rect, border_radius=8)
-    pygame.draw.rect(screen, WHITE, rect, 2, border_radius=8)
+    pygame.draw.rect(screen, C['WHITE'], rect, 2, border_radius=8)
+    text(txt, font, C['WHITE'], *rect.center, center=True)
 
-    txt = FONT.render(text, True, WHITE)
-    txt_rect = txt.get_rect(center=rect.center)
+def quality_bar(q, x, y, w=300, h=25):
+    pygame.draw.rect(screen, C['GRAY'], (x, y, w, h))
+    fill = int(w * q / 100)
+    col = C['GREEN'] if q >= 80 else C['YELLOW'] if q >= 50 else C['RED']
+    pygame.draw.rect(screen, col, (x, y, fill, h))
+    pygame.draw.rect(screen, C['WHITE'], (x, y, w, h), 2)
 
-    screen.blit(txt, txt_rect)
+def furnace(x, y, sz, tick):
+    sc = sz / 120.0
+    bw, bh = int(20*sc), int(16*sc)
+    for row in range(0, sz, bh):
+        off = 0 if (row//bh)%2==0 else bw//2
+        for col in range(-bw, sz+bw, bw):
+            pygame.draw.rect(screen, C['STONE'], (x+col+off, y+row, bw-2, bh-2))
+            pygame.draw.rect(screen, C['MORTAR'], (x+col+off, y+row, bw-2, bh-2), 1)
+    pygame.draw.rect(screen, C['DARK_STONE'], (x, y, sz, sz), int(4*sc))
+    mx, my, mw, mh = x+int(20*sc), y+int(55*sc), int(80*sc), int(55*sc)
+    mr = pygame.Rect(mx, my, mw, mh)
+    pygame.draw.rect(screen, C['BLACK'], mr)
+    pygame.draw.rect(screen, C['DARK_STONE'], mr, int(3*sc))
+    fcol = [C['ORANGE'], C['YELLOW'], (255,100,0)]
+    bfh = int(35*sc)
+    heights = [bfh+(tick*3)%int(6*sc), bfh+((tick+2)*3)%int(8*sc), bfh+((tick+4)*3)%int(5*sc)]
+    for i, fx in enumerate([mx+mw//4, mx+mw//2, mx+3*mw//4]):
+        fh = heights[i]
+        pygame.draw.ellipse(screen, fcol[i%3], (fx-int(12*sc), mr.y-fh//2, int(24*sc), fh))
+        pygame.draw.ellipse(screen, C['YELLOW'], (fx-int(8*sc), mr.y-fh//3, int(16*sc), fh//1.5))
+        for _ in range(int(3*sc)):
+            px = fx + random.randint(-int(8*sc), int(8*sc))
+            py = mr.y - random.randint(int(10*sc), fh+int(5*sc))
+            pygame.draw.rect(screen, random.choice(fcol), (px, py, int(4*sc), int(4*sc)))
+    tw, th = int(80*sc), int(12*sc)
+    pygame.draw.rect(screen, C['DARK_STONE'], (x+(sz-tw)//2, y-th//2, tw, th), border_radius=int(4*sc))
+    cw, ch = int(40*sc), int(30*sc)
+    cr = pygame.Rect(x+(sz-cw)//2, y-ch-th//2, cw, ch)
+    pygame.draw.rect(screen, C['DARK_STONE'], cr)
+    pygame.draw.rect(screen, C['MORTAR'], cr, int(2*sc))
+    if tick%2==0:
+        for s in range(3):
+            pygame.draw.circle(screen, (180,180,180), (cr.centerx+(s-1)*int(15*sc), cr.y-tick*2), int(8*sc))
 
+def anvil(x, y):
+    pygame.draw.rect(screen, C['ANVIL_GRAY'], (x-90, y+20, 180, 25), border_radius=8)
+    pygame.draw.polygon(screen, C['ANVIL_GRAY'], [(x-60,y+20),(x+60,y+20),(x+30,y-20),(x-30,y-20)])
+    pygame.draw.rect(screen, C['DARK_BROWN'], (x-70, y-25, 140, 15), border_radius=4)
 
-def draw_scene():
+def sword(q, gx, gy, shake=0):
+    gx += random.randint(-shake, shake)
+    gy += random.randint(-shake, shake)
+    if q < 30: bc, gl = (128,128,128), 0
+    elif q < 50: bc, gl = (100,100,255), 50
+    elif q < 70: bc, gl = (50,200,50), 100
+    elif q < 90: bc, gl = (255,255,0), 180
+    else: bc, gl = (255,255,255), 255
+    if gl:
+        s = pygame.Surface((200,100), pygame.SRCALPHA)
+        pygame.draw.ellipse(s, (*bc, min(gl,80)), (10,20,180,40))
+        screen.blit(s, (gx+10, gy-30))
+    tip = gx+190
+    pts = [(gx,gy-9),(tip-20,gy-13),(tip,gy),(tip-20,gy+13),(gx,gy+9)]
+    pygame.draw.polygon(screen, bc, pts)
+    pygame.draw.polygon(screen, C['BLACK'], pts, 2)
+    pygame.draw.line(screen, C['BLACK'], (gx,gy), (tip-25,gy), 2)
+    gr = pygame.Rect(gx-4, gy-15, 8, 30)
+    pygame.draw.rect(screen, C['YELLOW'], gr, border_radius=3)
+    pygame.draw.rect(screen, C['BLACK'], gr, 2, border_radius=3)
+    hr = pygame.Rect(gx-90, gy-6, 90, 12)
+    pygame.draw.rect(screen, C['BROWN'], hr, border_radius=4)
+    pygame.draw.rect(screen, C['BLACK'], hr, 2, border_radius=4)
+    pygame.draw.circle(screen, C['GOLD'], (gx-98, gy), 12)
+    pygame.draw.circle(screen, C['BLACK'], (gx-98, gy), 12, 2)
 
-    screen.fill(BACKGROUND)
+def hammer_swing(frame, maxf, ix, iy):
+    if frame <= 0: return
+    p = frame / maxf
+    px, py = ix-80, iy-120
+    al = 110
+    if p < 0.3: ang = -math.pi/4 * (p/0.3)
+    elif p < 0.7: t = (p-0.3)/0.4; ang = -math.pi/4*(1-t) + math.pi/6*t
+    else: t = (p-0.7)/0.3; ang = math.pi/6*(1-t)
+    hx = px + al*math.cos(ang); hy = py + al*math.sin(ang)
+    hs = pygame.Surface((100,22), pygame.SRCALPHA)
+    pygame.draw.rect(hs, C['GRAY'], (0,0,100,22), border_radius=6)
+    pygame.draw.rect(hs, C['BLACK'], (0,0,100,22), 3, border_radius=6)
+    pygame.draw.rect(hs, C['DARK_BROWN'], (6,4,48,6), border_radius=3)
+    rh = pygame.transform.rotate(hs, math.degrees(-ang))
+    screen.blit(rh, rh.get_rect(center=(hx,hy)))
+    dx, dy = hx-px, hy-py
+    d = math.hypot(dx, dy)
+    ad = math.degrees(math.atan2(dy,dx))
+    hl = d - 11 - 4
+    if hl > 10:
+        hnd = pygame.Surface((14, int(hl)), pygame.SRCALPHA)
+        pygame.draw.rect(hnd, C['BROWN'], (0,0,14,int(hl)), border_radius=5)
+        pygame.draw.rect(hnd, C['BLACK'], (0,0,14,int(hl)), 2, border_radius=5)
+        rhn = pygame.transform.rotate(hnd, -ad+90)
+        mx = px + (dx*(hl/2+11))/d; my = py + (dy*(hl/2+11))/d
+        screen.blit(rhn, rhn.get_rect(center=(mx,my)))
+    if 0.45 < p < 0.75:
+        for _ in range(20):
+            sx = ix + random.randint(-20,20); sy = iy + random.randint(-8,8)
+            pygame.draw.circle(screen, random.choice([C['YELLOW'],C['ORANGE'],C['WHITE']]), (sx,sy), random.randint(2,5))
 
-    # Título
-    draw_text("THE PERFECT BLADE", BIG_FONT, YELLOW, 320, 20)
+def bucket(frame, maxf, px, py, is_lava):
+    if frame <= 0: return
+    p = frame/maxf; tilt = 30*(1-p)
+    bs = pygame.Surface((40,30), pygame.SRCALPHA)
+    col = C['GRAY'] if is_lava else C['LIGHT_GRAY']
+    pygame.draw.rect(bs, col, (0,0,40,30))
+    pygame.draw.rect(bs, C['BLACK'], (0,0,40,30), 2)
+    pygame.draw.arc(bs, C['BLACK'], (10,-15,20,20), math.pi, 2*math.pi, 3)
+    rb = pygame.transform.rotate(bs, -tilt)
+    screen.blit(rb, (px-15, py-50))
+    if p > 0.1:
+        sl = 30+10*p
+        lc = C['LAVA_RED'] if is_lava else C['WATER_BLUE']
+        dc = C['ORANGE'] if is_lava else C['BLUE']
+        for i in range(3):
+            sx = px-8+i*8; sy = py-20
+            pygame.draw.line(screen, lc, (sx,sy), (sx+random.randint(-4,4), sy+sl), 4)
+        for _ in range(5):
+            dx = px + random.randint(-15,15); dy = py + random.randint(0,20)
+            pygame.draw.circle(screen, dc, (dx,dy), 3)
 
-    # ---------- Horno ----------
-    pygame.draw.rect(screen, GRAY, (60,120,220,220))
-    pygame.draw.rect(screen, BLACK, (100,160,140,120))
+# Botones de forja y tienda
+FBTNS = {'temp_plus': pygame.Rect(650,180,150,45), 'temp_minus': pygame.Rect(820,180,150,45),
+         'cool_plus': pygame.Rect(650,250,150,45), 'cool_minus': pygame.Rect(820,250,150,45),
+         'pattern': pygame.Rect(650,340,320,60), 'reduce': pygame.Rect(650,430,320,60),
+         'finish': pygame.Rect(650,520,320,60)}
+SBTNS = {'buy_lingotes': pygame.Rect(300,300,400,50), 'buy_delta': pygame.Rect(300,380,400,50),
+         'back': pygame.Rect(400,500,200,50)}
 
-    pygame.draw.circle(screen, ORANGE, (170,220),50)
-    pygame.draw.circle(screen, YELLOW, (170,220),25)
+def draw_menu():
+    screen.fill(C['BACKGROUND'])
+    text("THE PERFECT BLADE", TITLE_FONT, C['YELLOW'], W//2, 150, center=True)
+    text("Forja espadas para clientes exigentes", FONT, C['WHITE'], W//2, 220, center=True)
+    text("Haz clic para empezar", FONT, C['GREEN'], W//2, 400, center=True)
 
-    # ---------- Espada ----------
-    pygame.draw.rect(screen, LIGHT_GRAY, (120,430,200,12))
-    pygame.draw.rect(screen, YELLOW, (180,425,20,25))
-    pygame.draw.rect(screen, GRAY, (185,450,10,60))
+def draw_forge(g):
+    screen.fill(C['BACKGROUND'])
+    text(f"Cliente {g.cust_idx+1}/{len(g.customers)}", BIG_FONT, C['YELLOW'], 320, 20)
+    text(f"Requerida: {g.req}", FONT, C['WHITE'], 320, 60)
+    text(f"Recompensa: {g.reward} oro", FONT, C['WHITE'], 320, 85)
+    furnace(40, 80, 180, pygame.time.get_ticks()//150)
+    anvil(300, 470)
+    q = g.qual(g.bv)
+    sword(q, 200, 450, 2 if g.shake>0 else 0)
+    ix, iy = 290, 450
+    if g.lava_anim > 0: bucket(g.lava_anim, g.max_b, ix, iy, True)
+    elif g.water_anim > 0: bucket(g.water_anim, g.max_b, ix, iy, False)
+    elif g.hammer_anim > 0: hammer_swing(g.hammer_anim, g.max_h, ix, iy)
+    quality_bar(q, 60, 560)
+    text(f"Calidad: {q:.1f}", FONT, C['GREEN'], 380, 560)
+    text(f"Temp: {g.bx:.2f}", FONT, C['WHITE'], 380, 110)
+    text(f"Enfr: {g.by:.2f}", FONT, C['WHITE'], 380, 140)
+    text(f"Valor obj: {g.bv:.2f}", FONT, C['WHITE'], 380, 170)
+    text(f"Δ = {g.delta:.2f}", FONT, C['WHITE'], 380, 210)
+    text(f"Lingotes: {g.lingotes}", FONT, C['WHITE'], 380, 250)
+    text(f"Oro: {g.gold}", FONT, C['YELLOW'], 380, 280)
+    if g.streak > 0: text(f"Racha: {g.streak}", FONT, C['GREEN'], 380, 310)
+    text(g.msg, FONT, C['ORANGE'], 380, 340)
+    for k, r in FBTNS.items():
+        col = C['BLUE'] if 'temp' in k or 'cool' in k else C['GREEN'] if k=='pattern' else C['RED'] if k=='reduce' else C['BROWN']
+        label = {'temp_plus':'Temp +','temp_minus':'Temp -','cool_plus':'Enfriar +','cool_minus':'Enfriar -',
+                 'pattern':'Repetir técnica','reduce':'Reducir Δ','finish':'Terminar espada'}[k]
+        button(r, label, col)
+    if g.delta < g.eps: text("¡Precisión máxima!", FONT, C['GREEN'], 380, 470)
 
-    # ---------- Información ----------
+def draw_shop(g):
+    screen.fill(C['BACKGROUND'])
+    text("TIENDA DEL HERRERO", TITLE_FONT, C['YELLOW'], W//2, 80, center=True)
+    text(f"Oro: {g.gold}", BIG_FONT, C['WHITE'], W//2, 150, center=True)
+    button(SBTNS['buy_lingotes'], "Comprar 5 lingotes (50 oro)", C['GREEN'])
+    button(SBTNS['buy_delta'], "Mejorar martillo (+0.5 Δ inicial) - 100 oro", C['BLUE'])
+    button(SBTNS['back'], "Volver a la forja", C['GRAY'])
+    text(f"Lingotes actuales: {g.lingotes}", FONT, C['WHITE'], 350, 250)
+    text(f"Martillo nivel: {g.d_up}", FONT, C['WHITE'], 350, 270)
 
-    draw_text(f"Temperatura : {best_x:.2f}", FONT, WHITE, 380,110)
-    draw_text(f"Enfriamiento: {best_y:.2f}", FONT, WHITE, 380,145)
+def draw_result(g):
+    screen.fill(C['BACKGROUND'])
+    if g.forge_res == "exito":
+        text("¡ESPADA VENDIDA!", BIG_FONT, C['GREEN'], W//2, 200, center=True)
+        text(g.fmsg, FONT, C['WHITE'], W//2, 270, center=True)
+    else:
+        text("ESPADA RECHAZADA", BIG_FONT, C['RED'], W//2, 200, center=True)
+        text(g.fmsg, FONT, C['WHITE'], W//2, 270, center=True)
+    text("Haz clic para continuar", FONT, C['GRAY'], W//2, 400, center=True)
 
-    draw_text(f"Calidad: {sword_quality(best_value)}", FONT, GREEN, 380,190)
+def draw_victory():
+    screen.fill(C['BACKGROUND'])
+    text("¡HAS COMPLETADO TODOS LOS PEDIDOS!", BIG_FONT, C['YELLOW'], W//2, 200, center=True)
+    text("Eres un maestro forjador.", FONT, C['WHITE'], W//2, 300, center=True)
+    text("Gracias por jugar.", FONT, C['GRAY'], W//2, 380, center=True)
 
-    draw_text(f"Δ = {delta:.2f}", FONT, WHITE, 380,230)
+# Bucle principal
+def main():
+    g = Game()
+    scene = "menu"
+    g.next_cust()
+    running = True
+    while running:
+        clock.tick(60)
+        g.update_anim()
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT: running = False
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                m = pygame.mouse.get_pos()
+                if scene == "menu": scene = "forge"; g.next_cust()
+                elif scene == "forge":
+                    if e.button == 3: scene = "shop"; continue
+                    for k, r in FBTNS.items():
+                        if r.collidepoint(m):
+                            if k == 'temp_plus': g.explore(g.delta, 0)
+                            elif k == 'temp_minus': g.explore(-g.delta, 0)
+                            elif k == 'cool_plus': g.explore(0, g.delta)
+                            elif k == 'cool_minus': g.explore(0, -g.delta)
+                            elif k == 'pattern': g.pattern()
+                            elif k == 'reduce':
+                                g.reduce_delta()
+                                if g.delta < g.eps: scene = "result"
+                            elif k == 'finish': g.finish(); scene = "result"
+                            break
+                elif scene == "shop":
+                    if SBTNS['buy_lingotes'].collidepoint(m) and g.gold >= 50:
+                        g.gold -= 50; g.lingotes += 5
+                    elif SBTNS['buy_delta'].collidepoint(m) and g.gold >= 100:
+                        g.gold -= 100; g.d_up += 1
+                    elif SBTNS['back'].collidepoint(m): scene = "forge"
+                elif scene == "result":
+                    if g.cust_idx >= len(g.customers): scene = "victory"
+                    else: g.next_cust(); scene = "forge"
+                elif scene == "victory": running = False
+        if scene == "menu": draw_menu()
+        elif scene == "forge": draw_forge(g)
+        elif scene == "shop": draw_shop(g)
+        elif scene == "result": draw_result(g)
+        elif scene == "victory": draw_victory()
+        pygame.display.flip()
+    pygame.quit()
+    sys.exit()
 
-    draw_text(f"Lingotes: {lingotes}", FONT, WHITE, 380,270)
-
-    draw_text(message, FONT, ORANGE, 380,320)
-
-    # ---------- Botones ----------
-
-    draw_button(buttons["temp_plus"], "Temp +", BLUE)
-    draw_button(buttons["temp_minus"], "Temp -", BLUE)
-
-    draw_button(buttons["cool_plus"], "Enfriar +", BLUE)
-    draw_button(buttons["cool_minus"], "Enfriar -", BLUE)
-
-    draw_button(buttons["pattern"], "Repetir tecnica", GREEN)
-
-    draw_button(buttons["reduce"], "Reducir Δ", RED)
-
-    # ---------- Victoria ----------
-
-    if delta < epsilon:
-
-        pygame.draw.rect(screen,(30,30,30),(180,540,640,90))
-
-        pygame.draw.rect(screen,GREEN,(180,540,640,90),3)
-
-        draw_text("¡¡ESPADA LEGENDARIA FORJADA!!",
-                  BIG_FONT,
-                  GREEN,
-                  220,
-                  565)
-
-
-# =====================================================
-# LOOP PRINCIPAL
-# =====================================================
-
-running = True
-
-while running:
-
-    clock.tick(60)
-
-    for event in pygame.event.get():
-
-        if event.type == pygame.QUIT:
-            running = False
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-
-            mouse = pygame.mouse.get_pos()
-
-            if buttons["temp_plus"].collidepoint(mouse):
-                explore(delta,0)
-
-            elif buttons["temp_minus"].collidepoint(mouse):
-                explore(-delta,0)
-
-            elif buttons["cool_plus"].collidepoint(mouse):
-                explore(0,delta)
-
-            elif buttons["cool_minus"].collidepoint(mouse):
-                explore(0,-delta)
-
-            elif buttons["pattern"].collidepoint(mouse):
-                pattern_move()
-
-            elif buttons["reduce"].collidepoint(mouse):
-                reduce_delta()
-
-    draw_scene()
-
-    pygame.display.flip()
-
-pygame.quit()
-sys.exit()
-# IRONEDIT:1783053335:05ae9b6c8f4f360ddd6fb9dc582642c71065055934fa6ceb86ff405325e1c2da
+if __name__ == "__main__":
+    main()
