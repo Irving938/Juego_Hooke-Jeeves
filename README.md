@@ -106,3 +106,23 @@ Escalado automático: Soporte para diferentes resoluciones con escalado uniforme
 Carga de fuentes: Función dedicada para cargar fuentes.
 
 Manejo de eventos: Mejor organización del bucle principal.
+
+# Version 0.2.5
+
+Inicio con lingotes: ahora empiezas con 20 lingotes (antes 0).
+
+Acumulación de lingotes: los lingotes sobrantes se conservan para el siguiente cliente (antes se perdían al terminar cada nivel).
+
+Recarga automática de lingotes: cuando te quedas sin lingotes, el juego gasta oro automáticamente para comprar la cantidad necesaria (hasta un máximo de 20). Ya no se compran manualmente en la tienda.
+
+Precio de lingote progresivo: cada vez que se realiza una recarga automática, el precio por lingote aumenta, encareciendo futuras reposiciones.
+
+Tienda simplificada: solo puedes mejorar el martillo; se eliminó la opción de comprar lingotes.
+
+Condición de derrota: Game Over ocurre en cualquier momento si te quedas sin lingotes y no tienes oro suficiente para comprar al menos uno. Antes solo sucedía al intentar iniciar un nuevo cliente sin oro suficiente para pagar el coste de entrada.
+
+Sin victoria definida: el juego es infinito; ya no existe una pantalla de victoria tras 5 clientes.
+
+Panel de información mejorado: muestra “Lingotes: X/20” y “Precio lingote: Y”, para que el jugador vea la capacidad máxima y el coste de reposición.
+
+Historial más claro: en la pantalla de Game Over se muestra una tabla con las últimas 5 partidas, con encabezados (Fecha, Nivel, Oro, Req, Reward, Mejora). Además, cada entrada incluye la etiqueta “Game Over”.z
