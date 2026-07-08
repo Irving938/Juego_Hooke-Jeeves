@@ -126,3 +126,24 @@ Sin victoria definida: el juego es infinito; ya no existe una pantalla de victor
 Panel de información mejorado: muestra “Lingotes: X/20” y “Precio lingote: Y”, para que el jugador vea la capacidad máxima y el coste de reposición.
 
 Historial más claro: en la pantalla de Game Over se muestra una tabla con las últimas 5 partidas, con encabezados (Fecha, Nivel, Oro, Req, Reward, Mejora). Además, cada entrada incluye la etiqueta “Game Over”.z
+
+# Version 0.2.6
+Menú principal rediseñado:
+Título "THE PERFECT BLADE" más grande (HUGE_FONT), centrado y en negro (TITLE_BLACK).
+Subtítulo "Algoritmo Hooke-Jeeves en acción" en amarillo, centrado debajo.
+
+Dos botones: "Jugar" y "Tutorial".
+
+Pantalla de tutorial:
+Explica qué es el algoritmo, cómo funciona en el juego, qué hace cada botón y la dinámica general.
+Texto dentro de un panel translúcido, ajustado para no salirse de los márgenes.
+Botón "Volver" para regresar al menú.
+
+Historial simplificado:
+Eliminada la columna "Mejora" (d_upgrade) de la tabla de Game Over.
+Las columnas restantes (Fecha, Nivel, Oro, Req, Reward) se muestran centradas correctamente usando anchos calculados.
+
+Ajustes menores:
+La fuente HUGE_FONT agregada para el título.
+Las escenas menu y tutorial se dibujan correctamente en el bucle principal.
+El botón "Volver" en el tutorial usa coordenadas adaptables.
