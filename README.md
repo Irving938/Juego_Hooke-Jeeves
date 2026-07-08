@@ -147,3 +147,33 @@ Ajustes menores:
 La fuente HUGE_FONT agregada para el título.
 Las escenas menu y tutorial se dibujan correctamente en el bucle principal.
 El botón "Volver" en el tutorial usa coordenadas adaptables.
+
+# Version 0.3.0
+Rediseño mayor: el juego pasó de ser una interfaz de botones a una visualización real del algoritmo Hooke-Jeeves.
+Mapa de contorno de la función objetivo: se dibuja el paisaje de f(x, y) en tiempo real (zonas doradas = valores bajos, oscuras = valores altos). Sobre el mapa se muestran:
+
+La trayectoria de puntos aceptados por el algoritmo (línea celeste).
+El cuadrado de alcance de Δ alrededor del punto base.
+Los 4 candidatos de exploración pulsando en amarillo (o grises si ya se exploraron).
+El mejor punto actual pulsando en verde.
+Los mínimos globales conocidos marcados con cruces.
+
+Selección de función objetivo en el menú: ahora se elige entre Sphere (fácil), Himmelblau (media), Rastrigin (difícil) y Rosenbrock (experto). Cada tarjeta muestra una vista previa del contorno y su dificultad. El punto inicial se resamplea si nace demasiado cerca del mínimo, para que la partida no sea trivial.
+Escala de calidad reformulada: antes se usaba calidad = 100 − f, lo que hacía que Rosenbrock (con valores de f en cientos) diera calidad 0 casi siempre. Ahora se usa calidad = 100 · exp(−f / escala) con una escala ajustada por función, y todas dan barras jugables de 0 a 100.
+Fix del algoritmo: tras un salto de patrón (pattern_move) ahora se reinicia el estado de exploración. Antes las 4 direcciones quedaban marcadas como exploradas para siempre y bloqueaban el flujo. También se guarda el historial completo de puntos aceptados y el contador de evaluaciones de f.
+Efectos de sonido sintetizados: martillo, sizzle de lava, splash de agua, campana de venta, fallo. Se generan en tiempo real con numpy (no requiere archivos de audio). Si numpy no está instalado, el juego corre igual en silencio.
+Partículas: chispas al mejorar en el yunque, brasas ambientales flotando por la escena.
+Atajos de teclado completos:
+
+Flechas ←→↑↓: explorar en las 4 direcciones.
+ESPACIO: repetir técnica (patrón).
+R: reducir Δ.
+ENTER: entregar la espada.
+T o clic derecho: tienda.
+F11: pantalla completa.
+
+Interfaz: botones con estados hover / deshabilitado / sombra, paneles con títulos, línea de meta en la barra de calidad marcando el requisito. Layout reorganizado en 3 columnas (horno + cliente | mapa + estado | botones + recursos).
+Tienda mejorada: se reintrodujo la compra manual de 5 lingotes por precio actual, y el costo del martillo escala con el nivel. Al vender una espada se regalan +3 lingotes extra.
+Game Over con salida: pantalla final con botones "Reintentar" y "Salir" (antes solo salía). Se muestra la tabla del historial reciente.
+Historial CSV rediseñado (historial.csv): ahora incluye función usada, resultado (VENDIDA / RECHAZADA / GAME OVER), valor final de f, calidad, oro y evaluaciones de f. Se registra al final de cada espada, no solo al morir.
+Requisitos: Pygame (obligatorio) y NumPy (opcional, solo para sonido)
