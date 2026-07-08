@@ -394,8 +394,6 @@ def furnace(rect, tick):
             pygame.draw.circle(screen, (140, 138, 145, 90),
                                (chim.centerx + (s - 1) * int(15 * sc), chim.y - (tick % 30) * 2),
                                int(7 * sc))
-
-
 def anvil(x, y):
     pygame.draw.rect(screen, C['ANVIL_GRAY'],
                      (int(x - 90 * uniform_scale), int(y + 20 * uniform_scale),
@@ -484,7 +482,6 @@ def hammer_swing(frame, maxf, ix, iy):
             sy = iy + random.randint(-8, 8)
             pygame.draw.circle(screen, random.choice([C['YELLOW'], C['ORANGE'], C['WHITE']]),
                                (int(sx), int(sy)), random.randint(2, 5))
-
 
 def bucket(frame, maxf, px, py, is_lava):
     if frame <= 0:
@@ -578,6 +575,7 @@ class ForgeGame:
         self.lingote_price += self.lingote_price_inc
         self.opt.message = f"Compraste {cantidad} lingote(s) por {costo} oro."
         return True
+
 
     def buy_lingotes(self, n=5):
         costo = n * self.lingote_price
@@ -700,6 +698,7 @@ class ForgeGame:
                 self.opt.evaluations,
             ])
 
+
     def show_history(self):
         try:
             with open(HISTORIAL_CSV, "r", encoding="utf-8") as f:
@@ -810,6 +809,7 @@ def draw_menu(selected, mouse, tick):
         border = C['GOLD'] if sel else (C['WHITE'] if hover else C['PANEL_BORDER'])
         pygame.draw.rect(screen, border, rect, 3 if sel else 2, border_radius=10)
 
+
     button(rects['play'], "JUGAR", C['GREEN'], fonts['BIG_FONT'], mouse)
     button(rects['tutorial'], "Tutorial", C['BLUE'], fonts['FONT'], mouse)
     text("F11: pantalla completa", fonts['SMALL_FONT'], C['DIM'],
@@ -900,6 +900,7 @@ def draw_forge(g, mouse, tick):
     text(f"delta  = {g.opt.delta: .4f}   (epsilon = {g.opt.epsilon:.2f})",
          fonts['MONO_FONT'], C['WHITE'], ex, ey + 2 * lh)
     text(f"evaluaciones de f: {g.opt.evaluations}", fonts['MONO_FONT'], C['DIM'], ex, ey + 3 * lh)
+
 
     # Barra de calidad
     q = g.opt.quality(g.opt.best_value)
@@ -1100,6 +1101,7 @@ def main():
             if e.type == pygame.QUIT:
                 running = False
 
+
             elif e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_F11:
                     fullscreen = not fullscreen
@@ -1231,3 +1233,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# IRONEDIT:1783483369:ef8beff6efc3264f8bdc9be32a275e7f43867c2ba3b5c7121fab7e047aa72b1e

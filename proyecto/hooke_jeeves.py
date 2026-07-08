@@ -206,3 +206,4 @@ class HookeJeeves:
             self.message += "  |  Algoritmo terminado (delta < epsilon)."
             return True
         return False
+# IRONEDIT:1783482987:87ea91712158e1cbce4f21aef3ade021b4ec7ea490c95097d2183aedc3fc9a1a
